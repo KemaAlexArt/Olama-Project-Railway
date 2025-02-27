@@ -4,8 +4,8 @@ ARG FLAVOR=${TARGETARCH}
 ARG ROCMVERSION=6.3.3
 ARG JETPACK5VERSION=r35.4.1
 ARG JETPACK6VERSION=r36.4.0
-ARG CMAKEVERSION=3.27.6
-ARG GOVERSION=1.22.0  # Исправлено с 1.23.4 на 1.22.0
+ARG CMAKEVERSION=3.27.6  # Последняя стабильная версия
+ARG GOVERSION=1.22.0     # Исправлено с 1.23.4
 
 FROM --platform=linux/amd64 rocm/dev-almalinux-8:${ROCMVERSION}-complete AS base-amd64
 RUN yum install -y yum-utils \
@@ -24,7 +24,8 @@ RUN yum install -y yum-utils epel-release \
 ENV CC=clang CXX=clang++
 
 FROM base-${TARGETARCH} AS base
-RUN curl -fsSL https://github.com/Kitware/CMake/releases/download/v${CMAKEVERSION}/cmake-${CMAKEVERSION}-linux-$(uname -m).tar.gz | tar xz -C /usr/local --strip-components 1
+RUN curl -fsSL --no-check-certificate https://github.com/Kitware/CMake/releases/download/v${CMAKEVERSION}/cmake-${CMAKEVERSION}-linux-$(uname -m).tar.gz | tar xz -C /usr/local --strip-components 1 \
+    || (echo "Ошибка загрузки CMake! Проверьте версию." && exit 1)
 COPY CMakeLists.txt CMakePresets.json .
 COPY ml/backend/ggml/ggml ml/backend/ggml/ggml
 ENV LDFLAGS=-s
@@ -63,7 +64,7 @@ RUN cmake --preset 'ROCm 6' \
 
 FROM --platform=linux/arm64 nvcr.io/nvidia/l4t-jetpack:${JETPACK5VERSION} AS jetpack-5
 RUN apt-get update && apt-get install -y curl ccache \
-    && curl -fsSL https://github.com/Kitware/CMake/releases/download/v${CMAKEVERSION}/cmake-${CMAKEVERSION}-linux-$(uname -m).tar.gz | tar xz -C /usr/local --strip-components 1
+    && curl -fsSL --no-check-certificate https://github.com/Kitware/CMake/releases/download/v${CMAKEVERSION}/cmake-${CMAKEVERSION}-linux-$(uname -m).tar.gz | tar xz -C /usr/local --strip-components 1
 COPY CMakeLists.txt CMakePresets.json .
 COPY ml/backend/ggml/ggml ml/backend/ggml/ggml
 RUN cmake --preset 'JetPack 5' \
@@ -72,7 +73,7 @@ RUN cmake --preset 'JetPack 5' \
 
 FROM --platform=linux/arm64 nvcr.io/nvidia/l4t-jetpack:${JETPACK6VERSION} AS jetpack-6
 RUN apt-get update && apt-get install -y curl ccache \
-    && curl -fsSL https://github.com/Kitware/CMake/releases/download/v${CMAKEVERSION}/cmake-${CMAKEVERSION}-linux-$(uname -m).tar.gz | tar xz -C /usr/local --strip-components 1
+    && curl -fsSL --no-check-certificate https://github.com/Kitware/CMake/releases/download/v${CMAKEVERSION}/cmake-${CMAKEVERSION}-linux-$(uname -m).tar.gz | tar xz -C /usr/local --strip-components 1
 COPY CMakeLists.txt CMakePresets.json .
 COPY ml/backend/ggml/ggml ml/backend/ggml/ggml
 RUN cmake --preset 'JetPack 6' \
@@ -80,7 +81,8 @@ RUN cmake --preset 'JetPack 6' \
     && cmake --install build --component CUDA --strip --parallel 8
 
 FROM base AS build
-RUN curl -fsSL https://golang.org/dl/go${GOVERSION}.linux-$(uname -m).tar.gz | tar xz -C /usr/local
+RUN curl -fsSL --no-check-certificate https://golang.org/dl/go${GOVERSION}.linux-$(uname -m).tar.gz | tar xz -C /usr/local \
+    || (echo "Ошибка загрузки Go! Проверьте версию." && exit 1)
 ENV PATH=/usr/local/go/bin:$PATH
 WORKDIR /go/src/github.com/ollama/ollama
 COPY . .
