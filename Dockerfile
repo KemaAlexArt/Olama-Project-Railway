@@ -11,14 +11,14 @@ FROM --platform=linux/amd64 rocm/dev-almalinux-8:${ROCMVERSION}-complete AS base
 RUN yum install -y yum-utils \
     && yum-config-manager --add-repo https://dl.rockylinux.org/vault/rocky/8.5/AppStream/\$basearch/os/ \
     && rpm --import https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-8 \
-    && dnf install -y yum-utils ccache gcc-toolset-10-gcc gcc-toolset-10-gcc-c++ \
+    && dnf install -y yum-utils ccache gcc-toolset-10-gcc gcc-toolset-10-gcc-c++ --nodocs \
     && yum-config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo \
     && dnf clean all
 ENV PATH=/opt/rh/gcc-toolset-10/root/usr/bin:$PATH
 
 FROM --platform=linux/arm64 almalinux:8 AS base-arm64
 RUN yum install -y yum-utils epel-release \
-    && dnf install -y clang ccache \
+    && dnf install -y clang ccache --nodocs \
     && yum-config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel8/sbsa/cuda-rhel8.repo \
     && dnf clean all
 ENV CC=clang CXX=clang++
@@ -33,8 +33,7 @@ COPY ml/backend/ggml/ggml ml/backend/ggml/ggml
 ENV LDFLAGS=-s
 
 FROM base AS cpu
-RUN dnf install -y gcc-toolset-11-gcc gcc-toolset-11-gcc-c++ 
-RUN dnf clean all
+RUN dnf install -y gcc-toolset-11-gcc gcc-toolset-11-gcc-c++ --nodocs && dnf clean all
 ENV PATH=/opt/rh/gcc-toolset-11/root/usr/bin:$PATH
 RUN cmake --preset 'CPU' \
     && cmake --build --parallel --preset 'CPU' \
@@ -42,8 +41,7 @@ RUN cmake --preset 'CPU' \
 
 FROM base AS cuda-11
 ARG CUDA11VERSION=11.8  # Исправлено с 11.3
-RUN dnf install -y cuda-toolkit-${CUDA11VERSION//./-}
-RUN dnf clean all
+RUN dnf install -y cuda-toolkit-${CUDA11VERSION//./-} --nodocs && dnf clean all
 ENV PATH=/usr/local/cuda-11/bin:$PATH
 RUN cmake --preset 'CUDA 11' \
     && cmake --build --parallel --preset 'CUDA 11' \
@@ -51,8 +49,7 @@ RUN cmake --preset 'CUDA 11' \
 
 FROM base AS cuda-12
 ARG CUDA12VERSION=12.4  # Исправлено с 12.8
-RUN dnf install -y cuda-toolkit-${CUDA12VERSION//./-}
-RUN dnf clean all
+RUN dnf install -y cuda-toolkit-${CUDA12VERSION//./-} --nodocs && dnf clean all
 ENV PATH=/usr/local/cuda-12/bin:$PATH
 RUN cmake --preset 'CUDA 12' \
     && cmake --build --parallel --preset 'CUDA 12' \
@@ -90,7 +87,9 @@ RUN cmake --preset 'JetPack 6' \
 
 FROM base AS build
 ARG GOVERSION
-RUN wget -q https://go.dev/dl/go${GOVERSION}.linux-$(uname -m).tar.gz -O go.tar.gz \
+# Определяем корректное имя архитектуры для Go (amd64 вместо x86_64)
+RUN if [ "$(uname -m)" = "x86_64" ]; then GOARCH=amd64; else GOARCH=$(uname -m); fi \
+    && wget -q https://go.dev/dl/go${GOVERSION}.linux-${GOARCH}.tar.gz -O go.tar.gz \
     && tar xzf go.tar.gz -C /usr/local \
     && rm -f go.tar.gz
 ENV PATH=/usr/local/go/bin:$PATH
