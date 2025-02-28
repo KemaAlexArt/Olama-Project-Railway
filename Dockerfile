@@ -37,7 +37,7 @@ RUN dnf install -y gcc-toolset-11-gcc gcc-toolset-11-gcc-c++ --nodocs && dnf cle
 ENV PATH=/opt/rh/gcc-toolset-11/root/usr/bin:$PATH
 RUN cmake --preset 'CPU' \
     && cmake --build --parallel --preset 'CPU' \
-    && cmake --install build --component CPU --strip --parallel 8
+    && cmake --install build --component CPU --strip
 
 FROM base AS cuda-11
 ARG CUDA11VERSION=11.8  # Исправлено с 11.3
@@ -45,7 +45,7 @@ RUN dnf install -y cuda-toolkit-${CUDA11VERSION//./-} --nodocs && dnf clean all
 ENV PATH=/usr/local/cuda-11/bin:$PATH
 RUN cmake --preset 'CUDA 11' \
     && cmake --build --parallel --preset 'CUDA 11' \
-    && cmake --install build --component CUDA --strip --parallel 8
+    && cmake --install build --component CUDA --strip
 
 FROM base AS cuda-12
 ARG CUDA12VERSION=12.4  # Исправлено с 12.8
@@ -53,13 +53,13 @@ RUN dnf install -y cuda-toolkit-${CUDA12VERSION//./-} --nodocs && dnf clean all
 ENV PATH=/usr/local/cuda-12/bin:$PATH
 RUN cmake --preset 'CUDA 12' \
     && cmake --build --parallel --preset 'CUDA 12' \
-    && cmake --install build --component CUDA --strip --parallel 8
+    && cmake --install build --component CUDA --strip
 
 FROM base AS rocm-6
 ENV PATH=/opt/rocm/hcc/bin:/opt/rocm/hip/bin:/opt/rocm/bin:/opt/rocm/hcc/bin:$PATH
 RUN cmake --preset 'ROCm 6' \
     && cmake --build --parallel --preset 'ROCm 6' \
-    && cmake --install build --component HIP --strip --parallel 8
+    && cmake --install build --component HIP --strip
 
 FROM --platform=linux/arm64 nvcr.io/nvidia/l4t-jetpack:${JETPACK5VERSION} AS jetpack-5
 ARG CMAKEVERSION
@@ -71,7 +71,7 @@ COPY CMakeLists.txt CMakePresets.json .
 COPY ml/backend/ggml/ggml ml/backend/ggml/ggml
 RUN cmake --preset 'JetPack 5' \
     && cmake --build --parallel --preset 'JetPack 5' \
-    && cmake --install build --component CUDA --strip --parallel 8
+    && cmake --install build --component CUDA --strip
 
 FROM --platform=linux/arm64 nvcr.io/nvidia/l4t-jetpack:${JETPACK6VERSION} AS jetpack-6
 ARG CMAKEVERSION
@@ -83,7 +83,7 @@ COPY CMakeLists.txt CMakePresets.json .
 COPY ml/backend/ggml/ggml ml/backend/ggml/ggml
 RUN cmake --preset 'JetPack 6' \
     && cmake --build --parallel --preset 'JetPack 6' \
-    && cmake --install build --component CUDA --strip --parallel 8
+    && cmake --install build --component CUDA --strip
 
 FROM base AS build
 ARG GOVERSION
