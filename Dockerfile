@@ -43,9 +43,8 @@ FROM base AS cuda-11
 ARG CUDA11VERSION=11.8  # Исправлено с 11.3
 RUN dnf install -y cuda-toolkit-${CUDA11VERSION//./-} --nodocs && dnf clean all
 ENV PATH=/usr/local/cuda-11/bin:$PATH
-# Переопределяем список архитектур, исключая неподдерживаемую compute_100
-ENV CMAKE_CUDA_ARCHITECTURES="50;60;61;70;75;80;86;87;89;90;90a"
-RUN cmake --preset 'CUDA 11' \
+# Переопределяем список архитектур через аргумент CMake, исключая compute_100
+RUN cmake --preset 'CUDA 11' -- -DCMAKE_CUDA_ARCHITECTURES="50;60;61;70;75;80;86;87;89;90;90a" \
     && cmake --build --parallel --preset 'CUDA 11' \
     && cmake --install build --component CUDA --strip
 
@@ -53,9 +52,8 @@ FROM base AS cuda-12
 ARG CUDA12VERSION=12.4  # Исправлено с 12.8
 RUN dnf install -y cuda-toolkit-${CUDA12VERSION//./-} --nodocs && dnf clean all
 ENV PATH=/usr/local/cuda-12/bin:$PATH
-# Переопределяем список архитектур, исключая неподдерживаемую compute_100
-ENV CMAKE_CUDA_ARCHITECTURES="50;60;61;70;75;80;86;87;89;90;90a"
-RUN cmake --preset 'CUDA 12' \
+# Переопределяем список архитектур через аргумент CMake, исключая compute_100
+RUN cmake --preset 'CUDA 12' -- -DCMAKE_CUDA_ARCHITECTURES="50;60;61;70;75;80;86;87;89;90;90a" \
     && cmake --build --parallel --preset 'CUDA 12' \
     && cmake --install build --component CUDA --strip
 
