@@ -24,6 +24,7 @@ RUN yum install -y yum-utils epel-release \
 ENV CC=clang CXX=clang++
 
 FROM base-${TARGETARCH} AS base
+ARG CMAKEVERSION
 RUN wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKEVERSION}/cmake-${CMAKEVERSION}-linux-$(uname -m).tar.gz -O cmake.tar.gz \
     && tar xzf cmake.tar.gz -C /usr/local --strip-components 1 \
     && rm -f cmake.tar.gz
@@ -64,6 +65,7 @@ RUN cmake --preset 'ROCm 6' \
     && cmake --install build --component HIP --strip --parallel 8
 
 FROM --platform=linux/arm64 nvcr.io/nvidia/l4t-jetpack:${JETPACK5VERSION} AS jetpack-5
+ARG CMAKEVERSION
 RUN apt-get update && apt-get install -y wget ccache \
     && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKEVERSION}/cmake-${CMAKEVERSION}-linux-$(uname -m).tar.gz -O cmake.tar.gz \
     && tar xzf cmake.tar.gz -C /usr/local --strip-components 1 \
@@ -75,6 +77,7 @@ RUN cmake --preset 'JetPack 5' \
     && cmake --install build --component CUDA --strip --parallel 8
 
 FROM --platform=linux/arm64 nvcr.io/nvidia/l4t-jetpack:${JETPACK6VERSION} AS jetpack-6
+ARG CMAKEVERSION
 RUN apt-get update && apt-get install -y wget ccache \
     && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKEVERSION}/cmake-${CMAKEVERSION}-linux-$(uname -m).tar.gz -O cmake.tar.gz \
     && tar xzf cmake.tar.gz -C /usr/local --strip-components 1 \
